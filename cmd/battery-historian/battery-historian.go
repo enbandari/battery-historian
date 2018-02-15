@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	optimized = flag.Bool("optimized", true, "Whether to output optimized js files. Disable for local debugging.")
+	optimized = flag.Bool("optimized", false, "Whether to output optimized js files. Disable for local debugging.")
 	port      = flag.Int("port", 9999, "service port")
 
 	compiledDir   = flag.String("compiled_dir", "./compiled", "Directory containing compiled js file for Historian v2.")
@@ -50,8 +50,10 @@ func (s *analysisServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		if r.URL.Path == "/records" {
 			analyzer.ListRecordsHandler(w, r)
-		} else if r.URL.Path == "/record" {
+		} else if r.URL.Path == "/recordData" {
 			analyzer.RecordDataHandler(w, r)
+		} else if r.URL.Path == "/record" {
+			analyzer.RecordHandler(w, r)
 		} else {
 			analyzer.UploadHandler(w, r)
 		}

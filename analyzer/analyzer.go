@@ -83,11 +83,11 @@ const (
 
 var (
 	// Initialized in InitTemplates()
-	uploadTempl  *template.Template
-	listRecordTempl  *template.Template
-	uploadTempl2  *template.Template
-	resultTempl  *template.Template
-	compareTempl *template.Template
+	uploadTempl     *template.Template
+	listRecordTempl *template.Template
+	recordTempl     *template.Template
+	resultTempl     *template.Template
+	compareTempl    *template.Template
 
 	// Initialized in SetScriptsDir()
 	scriptsDir    string
@@ -387,10 +387,10 @@ func InitTemplates(dir string) {
 		"copy.html",
 	})
 
-	uploadTempl2 = constructTemplate(dir, []string{
+	recordTempl = constructTemplate(dir, []string{
 		"base.html",
 		"body.html",
-		"upload2.html",
+		"record.html",
 		"copy.html",
 	})
 
@@ -493,6 +493,24 @@ func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
 		records,
 	}
 	if err := listRecordTempl.Execute(w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func RecordHandler(w http.ResponseWriter, r *http.Request) {
+	// If false, the upload template will load closure and js files in the header.
+	recordData := struct {
+		IsOptimizedJs bool
+		ResVersion    int
+		ID string
+	}{
+		isOptimizedJs,
+		resVersion,
+		r.URL.Query()["id"][0],
+	}
+
+	if err := recordTempl.Execute(w, recordData); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
