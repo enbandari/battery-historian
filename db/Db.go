@@ -53,6 +53,25 @@ func DeleteRecord(record TaskRecord) {
 	fmt.Println("delete ok: ")
 }
 
+func ListAllRecordsWithoutData() []TaskRecord{
+	db, err := gorm.Open(sqlType, host)
+	defer db.Close()
+
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	db.AutoMigrate(&TaskRecord{})
+
+	var records []TaskRecord
+	err = db.Select("id,created_at, remark, device_model, sdk_version").Find(&records).Error
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("list ok: ", len(records))
+	return records
+}
+
 func ListRecordsWithoutData(page uint16, size uint16) []TaskRecord{
 	db, err := gorm.Open(sqlType, host)
 	defer db.Close()
@@ -63,8 +82,6 @@ func ListRecordsWithoutData(page uint16, size uint16) []TaskRecord{
 
 	db.AutoMigrate(&TaskRecord{})
 
-
-
 	var records []TaskRecord
 	err = db.Where("limit ? offset ?", size, page * size).Select("id", "created_at", "remark", "device_model").Find(&records).Error
 	if err != nil {
@@ -74,7 +91,7 @@ func ListRecordsWithoutData(page uint16, size uint16) []TaskRecord{
 	return records
 }
 
-func queryDataForId(id int64) string{
+func QueryDataForId(id string) string{
 	db, err := gorm.Open(sqlType, host)
 	defer db.Close()
 
@@ -84,13 +101,13 @@ func queryDataForId(id int64) string{
 
 	db.AutoMigrate(&TaskRecord{})
 
-	var data string
-	err = db.Select("analyzed_data").Where("id = ?", id).Find(&data).Error
+	var result = TaskRecord{}
+	err = db.Select("analyzed_data").Where("id = ?", id).Find(&result).Error
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("query ok, size: ", len(data))
-	return data
+	fmt.Println("query ok, size: ", len(result.AnalyzedData))
+	return result.AnalyzedData
 }
 
 func ClearRecords() {

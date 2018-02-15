@@ -48,7 +48,13 @@ func (s *analysisServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		analyzer.UploadHandler(w, r)
+		if r.URL.Path == "/records" {
+			analyzer.ListRecordsHandler(w, r)
+		} else if r.URL.Path == "/record" {
+			analyzer.RecordDataHandler(w, r)
+		} else {
+			analyzer.UploadHandler(w, r)
+		}
 	case "POST":
 		r.ParseForm()
 		analyzer.HTTPAnalyzeHandler(w, r)

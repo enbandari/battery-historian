@@ -84,6 +84,7 @@ const (
 var (
 	// Initialized in InitTemplates()
 	uploadTempl  *template.Template
+	listRecordTempl  *template.Template
 	uploadTempl2  *template.Template
 	resultTempl  *template.Template
 	compareTempl *template.Template
@@ -379,6 +380,13 @@ func InitTemplates(dir string) {
 		"copy.html",
 	})
 
+	listRecordTempl = constructTemplate(dir, []string{
+		"base.html",
+		"body.html",
+		"records.html",
+		"copy.html",
+	})
+
 	uploadTempl2 = constructTemplate(dir, []string{
 		"base.html",
 		"body.html",
@@ -452,6 +460,42 @@ func closeConnection(w http.ResponseWriter, s string) {
 	log.Println(s, " Closing connection.")
 	conn, _, _ := w.(http.Hijacker).Hijack()
 	conn.Close()
+}
+
+func RecordDataHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query()["id"][0]
+	data := []byte(db.QueryDataForId(id))
+	w.Header().Set("Content-Type", "application/json")
+
+	// Gzip data if it's accepted by the requester.
+	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+		gzipped, err := historianutils.GzipCompress(data)
+		if err == nil {
+			w.Header().Add("Content-Encoding", "gzip")
+			w.Write(gzipped)
+			return
+		}
+		// Send ungzipped data.
+		log.Printf("failed to gzip data: %v", err)
+	}
+	w.Write(data)
+}
+
+func ListRecordsHandler(w http.ResponseWriter, r *http.Request) {
+	records := db.ListAllRecordsWithoutData()
+	data := struct {
+		IsOptimizedJs bool
+		ResVersion    int
+		Records []db.TaskRecord
+	}{
+		isOptimizedJs,
+		resVersion,
+		records,
+	}
+	if err := listRecordTempl.Execute(w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // UploadHandler serves the upload html page.
